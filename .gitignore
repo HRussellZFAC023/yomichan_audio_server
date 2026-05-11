@@ -1,11 +1,15 @@
-/target
-*audio/*
-yomichan_audio_server.exe
-config.json
+/target/
+/audio/
+
+# Local runtime files and large release assets.
 entries.db
-test*
-<<<<<<< HEAD
-yas-x86_64-pc-windows.exe
-=======
+*.db
+*.zip
+yomichan_audio_server.exe
+yas-*
+config.json
 sort.txt
->>>>>>> d6817192bdce3e4428127b65299cd62e6d53056e
+
+# Local scratch files.
+.DS_Store
+test*
