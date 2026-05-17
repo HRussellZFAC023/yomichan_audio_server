@@ -1,6 +1,6 @@
 [package]
 name = "yomichan_audio_server"
-version = "0.0.3"
+version = "0.4.1"
 edition = "2021"
 
 [lib]
@@ -27,7 +27,7 @@ indexmap = { version = "2.7.1", features = ["serde"] }
 color-print = "0.3.7"
 strum = { version = "0.27.1", features = ["derive"] }
 
-[target.'cfg(any(windows, linux))'.dependencies]
+[target.'cfg(windows)'.dependencies]
 tray-item = "0.10.0"
 
 [build-dependencies]

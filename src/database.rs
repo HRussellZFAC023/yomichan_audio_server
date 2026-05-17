@@ -314,6 +314,7 @@ mod db {
     }
 
     #[test]
+    #[ignore = "requires a local audio fixture folder"]
     fn find_audio_file() {
         let e = DatabaseEntry {
             expression: "日本語".to_string(),
@@ -330,6 +331,7 @@ mod db {
     }
 
     #[test]
+    #[ignore = "requires a local audio fixture folder"]
     fn index_audio() {
         let start = Instant::now();
         let res = index_files("audio");
@@ -338,6 +340,7 @@ mod db {
     }
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+    #[ignore = "requires an initialized program database"]
     async fn count_entries() {
         let pool = &PROGRAM_INFO.get().unwrap().db;
         let entries: Vec<DatabaseEntry> = sqlx::query_as("SELECT * FROM entries")
@@ -348,6 +351,7 @@ mod db {
     }
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+    #[ignore = "requires an initialized program database"]
     async fn test_query() {
         tracing_subscriber::fmt::init();
         let instant = Instant::now();

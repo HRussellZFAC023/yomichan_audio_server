@@ -46,11 +46,20 @@ You can use audio folders from the upstream release assets or from your own Ulti
 
 ## Download or Build
 
-Prebuilt upstream assets are available on the original release page:
+Prebuilt downloads for this fork are on the release page:
 
-https://github.com/aramrw/yomichan_audio_server/releases/latest
+https://github.com/HRussellZFAC023/yomichan_audio_server/releases/latest
 
-If you build this fork from source, download `entries.db` from the release assets first and place it in the repo root. The release binary embeds that database, but source builds need the file at compile time because `src/main.rs` includes it in the executable.
+Choose the download for your computer:
+
+- Windows: `windows-x86_64.zip`
+- Apple Silicon Mac: `macos-aarch64.tar.gz`
+- Intel Mac: `macos-x86_64.tar.gz`
+- Linux: `linux-x86_64.tar.gz`
+
+The downloaded server already has the entries database embedded. Audio files are not bundled; put your audio folders in an `audio` folder next to the server, or pass a folder with `--audio`.
+
+If you build this fork from source, download `entries.db` from the upstream release assets first and place it in the repo root. Source builds need the file at compile time because `src/main.rs` includes it in the executable.
 
 ```bash
 git clone https://github.com/HRussellZFAC023/yomichan_audio_server.git

@@ -1,0 +1,125 @@
+name: Release binaries
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  ENTRIES_DB_URL: https://github.com/aramrw/yomichan_audio_server/releases/download/v0.0.3/entries.db
+
+jobs:
+  build:
+    name: Build ${{ matrix.asset_suffix }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            asset_suffix: linux-x86_64
+          - os: macos-13
+            asset_suffix: macos-x86_64
+          - os: macos-14
+            asset_suffix: macos-aarch64
+          - os: windows-latest
+            asset_suffix: windows-x86_64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install nightly Rust
+        shell: bash
+        run: |
+          rustup toolchain install nightly --profile minimal
+          rustup default nightly
+
+      - name: Download embedded entries database
+        shell: bash
+        run: curl -L "$ENTRIES_DB_URL" -o entries.db
+
+      - name: Test
+        run: cargo test --locked
+
+      - name: Build
+        run: cargo build --release --locked
+
+      - name: Package Unix binary
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME:-manual}"
+          asset="yomichan-audio-server-${version}-${{ matrix.asset_suffix }}"
+          mkdir -p "dist/${asset}" artifacts
+          cp target/release/yomichan_audio_server "dist/${asset}/"
+          cp README.md "dist/${asset}/"
+          tar -czf "artifacts/${asset}.tar.gz" -C dist "${asset}"
+
+      - name: Package Windows binary
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $version = if ($env:GITHUB_REF_NAME) { $env:GITHUB_REF_NAME } else { "manual" }
+          $asset = "yomichan-audio-server-$version-${{ matrix.asset_suffix }}"
+          New-Item -ItemType Directory -Force "dist/$asset", artifacts | Out-Null
+          Copy-Item target/release/yomichan_audio_server.exe "dist/$asset/yomichan_audio_server.exe"
+          Copy-Item README.md "dist/$asset/README.md"
+          Copy-Item start.bat "dist/$asset/start.bat"
+          Compress-Archive -Path "dist/$asset" -DestinationPath "artifacts/$asset.zip" -Force
+
+      - name: Upload packaged binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset_suffix }}
+          path: artifacts/*
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub Release
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download packaged binaries
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Write release notes
+        shell: bash
+        run: |
+          cat > RELEASE_NOTES.md <<'NOTES'
+          Prebuilt binaries for the よむ/Yomitan local audio server fork.
+
+          Downloads:
+          - `windows-x86_64.zip` for 64-bit Windows
+          - `macos-aarch64.tar.gz` for Apple Silicon Macs
+          - `macos-x86_64.tar.gz` for Intel Macs
+          - `linux-x86_64.tar.gz` for 64-bit Linux
+
+          These downloads include the server executable and README. Audio data is not bundled; put your audio folders in an `audio` folder next to the executable, or pass a folder with `--audio`.
+
+          Example:
+
+          ```text
+          http://localhost:9393/?term={term}&reading={reading}
+          ```
+          NOTES
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          gh release create "$GITHUB_REF_NAME" artifacts/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Yomichan/Yomitan Audio Server $GITHUB_REF_NAME" \
+            --notes-file RELEASE_NOTES.md
